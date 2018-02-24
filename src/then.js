@@ -16,7 +16,6 @@ function then(onfulfilled, onrejected) {
   // get promise from this (ps: promise.then()).
   const promise = this
   const state = promise.getState()
-  const hasCall = promise.getCallFlags()
   // if promise state is fulfilled, value is eventual result.
   // if promise state is rejected, value is rejected reason.
   const value = promise.getValue()
@@ -30,37 +29,35 @@ function then(onfulfilled, onrejected) {
     )
   }
 
-  if (!hasCall) {
-    try {
-      const isFulfilled = state === 'resolved'
-      const isRejected = state === 'rejected'
-      const callFn = isFulfilled
-        ? onfulfilled
-        : isRejected ? onrejected : null
+  try {
+    const isFulfilled = state === 'resolved'
+    const isRejected = state === 'rejected'
+    const callFn = isFulfilled
+      ? onfulfilled
+      : isRejected ? onrejected : null
 
-      returnValue = isFunction(callFn)
-        ? callFn(value)
-        : isFulfilled ? Promise.resolve(value)
-        : isRejected ? Promise.reject(value)
-        : value
-      
-      if (returnValue instanceof Promise) {
-        return returnValue
-      }
-
-      if (isObject(returnValue) || isFunction(returnValue)) {
-        const thenable = returnValue.then
-        return isFunction(thenable)
-          ? new Promise((resolve, reject) =>
-            thenable.call(returnValue, resolve, reject))
-          : Promise.resolve(returnValue)
-      }
-
-      return Promise.resolve(returnValue)
-    } catch(e) {
-      // if error occur, then return next promise with rejected state.
-      return Promise.reject(e)
+    returnValue = isFunction(callFn)
+      ? callFn(value)
+      : isFulfilled ? Promise.resolve(value)
+      : isRejected ? Promise.reject(value)
+      : value
+    
+    if (returnValue instanceof Promise) {
+      return returnValue
     }
+
+    if (isObject(returnValue) || isFunction(returnValue)) {
+      const thenable = returnValue.then
+      return isFunction(thenable)
+        ? new Promise((resolve, reject) =>
+          thenable.call(returnValue, resolve, reject))
+        : Promise.resolve(returnValue)
+    }
+
+    return Promise.resolve(returnValue)
+  } catch(e) {
+    // if error occur, then return next promise with rejected state.
+    return Promise.reject(e)
   }
 }
 

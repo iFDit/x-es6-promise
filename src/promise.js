@@ -1,8 +1,7 @@
 const util = require('./util')
-const then = require('./then')
 
 const isObject = util.isObject
-const isFunction = util.isFcuntion
+const isFunction = util.isFunction
 
 class Promise {
   constructor(fn) {
@@ -10,11 +9,14 @@ class Promise {
     this.state = 'pendding'
     this.fulfilledcallList = []
     this.rejectedcallList = []
-    this.init(fn)
-
     // method bind
     this.resolve = this.resolve.bind(this)
     this.reject = this.reject.bind(this)
+    this.then = this.then.bind(this)
+    this.catch = this.catch.bind(this)
+
+    // init promise call
+    this.init(fn)
     // return other promise instance 
     return { then: this.then, catch: this.catch }
   }
@@ -30,11 +32,13 @@ class Promise {
   }
 
   then(onfulfilled, onrejected) {
-    then.call(this, onfulfilled, onrejected)
+    const then = require('./then')
+    return then.call(this, onfulfilled, onrejected)
   }
 
   catch(onrejected) {
-    then.call(this, null, onrejected)
+    const then = require('./then')
+    return then.call(this, null, onrejected)
   }
 
   getState() {
@@ -46,7 +50,7 @@ class Promise {
   }
 
   resolve(value) {
-    const then = value.then
+    const then =  value ? value.then : null
 
     if (isFunction(then)) {
       return then.call(value, this.resolve, this.reject)
@@ -97,6 +101,8 @@ class Promise {
       isFunction(thenable)
         ? thenable.call(object, resolve, reject)
         : resolve(object)
+    } else {
+      resolve(object)
     }
   }
 
