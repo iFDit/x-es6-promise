@@ -7,6 +7,6 @@ const isfunction = isType('function')
 const isObject = isType('object')
 
 module.exports = {
-  isFcuntion,
+  isFunction,
   isObject,
 }

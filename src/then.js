@@ -1,7 +1,9 @@
 const Promise = require('./promise')
 const util = require('./util')
-const isfunction = util.isfunction
+const isFunction = util.isfunction
 const isObject = util.isObject
+
+
 /**
  * Provide Promise/A+ then implement.
  * 
@@ -30,13 +32,13 @@ function then(onfulfilled, onrejected) {
 
   if (!hasCall) {
     try {
-      const isFulfilled = state === 'fulfilled'
+      const isFulfilled = state === 'resolved'
       const isRejected = state === 'rejected'
       const callFn = isFulfilled
         ? onfulfilled
         : isRejected ? onrejected : null
 
-      returnValue = isfunction(callFn)
+      returnValue = isFunction(callFn)
         ? callFn(value)
         : isFulfilled ? Promise.resolve(value)
         : isRejected ? Promise.reject(value)
@@ -46,9 +48,9 @@ function then(onfulfilled, onrejected) {
         return returnValue
       }
 
-      if (isObject(returnValue) || isfunction(returnValue)) {
+      if (isObject(returnValue) || isFunction(returnValue)) {
         const thenable = returnValue.then
-        return isfunction(thenable)
+        return isFunction(thenable)
           ? new Promise((resolve, reject) =>
             thenable.call(returnValue, resolve, reject))
           : Promise.resolve(returnValue)
@@ -61,3 +63,6 @@ function then(onfulfilled, onrejected) {
     }
   }
 }
+
+
+module.exports = then
