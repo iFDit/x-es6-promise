@@ -12,10 +12,14 @@ class Promise {
     this.rejectedcallList = []
     this.init(fn)
 
+    // method bind
+    this.resolve = this.resolve.bind(this)
+    this.reject = this.reject.bind(this)
+    // return other promise instance 
     return { then: this.then, catch: this.catch }
   }
 
-  init = (fn) => {
+  init(fn) {
     try {
       fn(this.resolve, this.reject)
     } catch (e) {
@@ -25,23 +29,23 @@ class Promise {
     }
   }
 
-  then = (onfulfilled, onrejected) => {
+  then(onfulfilled, onrejected) {
     then.call(this, onfulfilled, onrejected)
   }
 
-  catch = (onrejected) => {
+  catch(onrejected) {
     then.call(this, null, onrejected)
   }
 
-  getState = () => {
+  getState() {
     return this.state
   }
 
-  getValue = () => {
+  getValue() {
     return this.value
   }
 
-  resolve = (value) => {
+  resolve(value) {
     const then = value.then
 
     if (isFunction(then)) {
@@ -64,7 +68,7 @@ class Promise {
     this.setState('resolved')
   }
 
-  reject = (value) => {
+  reject(value) {
     const then = value.then
     
     if (isFunction(then)) {
@@ -87,7 +91,7 @@ class Promise {
     this.setState('rejected')
   }
 
-  handleValue = (object, resolve, reject) => {
+  handleValue(object, resolve, reject) {
     if (isObject(object) || isFunction(object)) {
       const thenable = object.then
       isFunction(thenable)
@@ -96,17 +100,19 @@ class Promise {
     }
   }
 
-  setState = (state) => {
+  setState(state) {
     this.state = state
     this.fulfilledcallList = []
     this.rejectedcallList = []
   }
 
-  addPendding = (
+  addPendding(
     fulfilledHandle,
     rejectedHandle
-  ) => {
+  ) {
     this.fulfilledcallList.push(fulfilledHandle)
     this.rejectedcallList.push(rejectedHandle)
   }
 }
+
+module.exports = Promise
