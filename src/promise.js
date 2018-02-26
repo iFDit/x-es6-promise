@@ -50,6 +50,18 @@ class Promise {
   }
 
   resolve(value) {
+    const execute = () => this.resolveSync(value)
+    // guarantee the promise always run async.
+    this.asyncRun(execute)
+  }
+
+  reject(value) {
+    const execute = () => this.rejectSync(value)
+    // guarantee the promise always run async.
+    this.asyncRun(execute)
+  }
+
+  resolveSync(value) {
     const then =  value ? value.then : null
 
     if (isFunction(then)) {
@@ -72,7 +84,7 @@ class Promise {
     this.setState('resolved')
   }
 
-  reject(value) {
+  rejectSync(value) {
     const then = value.then
     
     if (isFunction(then)) {
@@ -103,6 +115,21 @@ class Promise {
         : resolve(object)
     } else {
       resolve(object)
+    }
+  }
+
+  asyncRun(fn) {
+    if (global && global.process && isFunction(process.nextTick)) {
+      // push to microtasks.
+      process.nextTick(fn)
+    } else if (window && isFunction(window.MutationObserver)) {
+      const div = window.document.createElement('div')
+      const observer = new window.MutationObserver(fn)
+      observer.observe(div, {attributes: true})
+      div.setAttribute('id', 'id' + new Date().getTime())
+    } else {
+      // else use macrotask.
+      setTimeout(fn, 0)
     }
   }
 
