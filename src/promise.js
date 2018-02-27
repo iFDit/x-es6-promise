@@ -3,8 +3,11 @@ const util = require('./util')
 const isObject = util.isObject
 const isFunction = util.isFunction
 
+// Promise A+
 class Promise {
+
   constructor(fn) {
+    // promise inner property.
     this.value = void 0
     this.state = 'pendding'
     this.fulfilledcallList = []
@@ -22,9 +25,12 @@ class Promise {
   }
 
   init(fn) {
+    // immediately call the function.
     try {
       fn(this.resolve, this.reject)
     } catch (e) {
+      // if function catch en error and promise state is pendding
+      // then reject this promise.
       if (this.getState() === 'pendding') {
         this.reject(e)
       }
@@ -32,21 +38,11 @@ class Promise {
   }
 
   then(onfulfilled, onrejected) {
-    const then = require('./then')
-    return then.call(this, onfulfilled, onrejected)
+    // overwrite
   }
 
   catch(onrejected) {
-    const then = require('./then')
-    return then.call(this, null, onrejected)
-  }
-
-  getState() {
-    return this.state
-  }
-
-  getValue() {
-    return this.value
+    // overwrite
   }
 
   resolve(value) {
@@ -114,6 +110,8 @@ class Promise {
         ? thenable.call(object, resolve, reject)
         : resolve(object)
     } else {
+      // return value is not object or function
+      // then just pass value to outer promise.
       resolve(object)
     }
   }
@@ -123,6 +121,7 @@ class Promise {
       // push to microtasks.
       process.nextTick(fn)
     } else if (window && isFunction(window.MutationObserver)) {
+      // Browser env has MutationObserver that is use microtask.
       const div = window.document.createElement('div')
       const observer = new window.MutationObserver(fn)
       observer.observe(div, {attributes: true})
@@ -146,6 +145,20 @@ class Promise {
     this.fulfilledcallList.push(fulfilledHandle)
     this.rejectedcallList.push(rejectedHandle)
   }
+
+  getState() {
+    return this.state
+  }
+
+  getValue() {
+    return this.value
+  }
+
 }
+
+
+// Static Method
+Promise.resolve = (value) => new Promise((resolve) => resolve(value))
+Promise.reject = (value) => new Promise((resolve, reject) => reject(value))
 
 module.exports = Promise
