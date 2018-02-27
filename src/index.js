@@ -1,8 +1,11 @@
-// TO DO
 const Promise = require('./promise')
+const then = require('./then')
 
-const a = new Promise((resolve, reject) => {
-  setTimeout(() => resolve(11111), 1000)
-})
-.then((data) => console.log('first', data))
-.then((data) => console.log('second', data))
+Promise.prototype.then = function (onfulfilled, onrejected) {
+  return then.call(this, onfulfilled, onrejected)
+}
+Promise.prototype.catch = function (onrejected) {
+  return then.call(this, null, onrejected)
+}
+
+module.exports = Promise

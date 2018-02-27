@@ -1,5 +1,6 @@
 const Promise = require('./promise')
 const util = require('./util')
+
 const isFunction = util.isfunction
 const isObject = util.isObject
 
