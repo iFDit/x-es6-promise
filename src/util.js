@@ -5,8 +5,10 @@ const isType = (type) => (value) => (
 
 const isFunction = isType('function')
 const isObject = isType('object')
+const isArray = isType('array')
 
 module.exports = {
   isFunction,
   isObject,
+  isArray,
 }
