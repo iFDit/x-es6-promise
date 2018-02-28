@@ -77,7 +77,7 @@ class Promise {
       }
     })
 
-    this.setState('resolved')
+    this.setState('resolved', value)
   }
 
   rejectSync(value) {
@@ -100,7 +100,7 @@ class Promise {
       }
     })
 
-    this.setState('rejected')
+    this.setState('rejected', value)
   }
 
   handleValue(object, resolve, reject) {
@@ -132,8 +132,9 @@ class Promise {
     }
   }
 
-  setState(state) {
+  setState(state, value) {
     this.state = state
+    this.value = value
     this.fulfilledcallList = []
     this.rejectedcallList = []
   }
@@ -155,10 +156,5 @@ class Promise {
   }
 
 }
-
-
-// Static Method
-Promise.resolve = (value) => new Promise((resolve) => resolve(value))
-Promise.reject = (value) => new Promise((resolve, reject) => reject(value))
 
 module.exports = Promise
