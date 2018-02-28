@@ -58,6 +58,8 @@ class Promise {
   }
 
   resolveSync(value) {
+    if (this.getState() !== 'pendding') { return }
+
     const then =  value ? value.then : null
 
     if (isFunction(then)) {
@@ -81,6 +83,8 @@ class Promise {
   }
 
   rejectSync(value) {
+    if (this.getState() !== 'pendding') { return }
+    
     const then = value.then
     
     if (isFunction(then)) {
