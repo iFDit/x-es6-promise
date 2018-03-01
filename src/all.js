@@ -5,6 +5,14 @@ const isArray = util.isArray
 const isObject = util.isObject
 const isFunction = util.isFunction
 
+
+/**
+ * 
+ * Promise all method.
+ * accept an promise arry and resovle when all promise is resovle,
+ * if any of promise is reject, then Promise.all will become rejcet.
+ * 
+ */
 function all() {
   const arg1 = arguments[0]
 
@@ -17,6 +25,7 @@ function all() {
     const done = (index) => (value) => {
       result[index] = value
       count -= 1
+      if (!count) { resolve(result) }
     }
 
     arg1.forEach((value, index) => {
@@ -31,3 +40,5 @@ function all() {
     })
   })
 }
+
+module.exports = all
