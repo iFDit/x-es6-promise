@@ -3,7 +3,7 @@ const util = require('./util')
 const isObject = util.isObject
 const isFunction = util.isFunction
 
-// Promise A+
+// Promise/A+
 class Promise {
 
   constructor(fn) {
@@ -73,6 +73,8 @@ class Promise {
 
       try {
         const onfulfilled = cb.onfulfilled
+        // if have not onfulfilled callback, then pass value to next promise.
+        if (!isFunction(onfulfilled)) { toResolve(value) }
         this.handleValue(onfulfilled(value), toResolve, toReject)
       } catch (e) {
         toReject(e)
@@ -98,6 +100,8 @@ class Promise {
 
       try {
         const onrejected = cb.onrejected
+        // if have not onrejected callback, then pass throght to next promise.
+        if (!isFunction(onrejected)) { throw value }
         this.handleValue(onrejected(value), toResolve, toReject)
       } catch (e) {
         toReject(e)
