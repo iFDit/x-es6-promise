@@ -1,0 +1,17 @@
+{
+  "name": "x-es6-promise",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "devDependencies": {
+    "promises-aplus-tests": "*"
+  },
+  "scripts": {
+    "test": "promises-aplus-tests test/test-adapter"
+  },
+  "author": "",
+  "license": "MIT"
+}
