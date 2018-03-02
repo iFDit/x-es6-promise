@@ -1,6 +1,13 @@
 const Promise = require('./promise')
 const util = require('./util')
 
+
+/**
+ * 
+ * Promise race method.
+ * accept an promise arry and resovle when first promise is resovle,
+ * if any of promise is reject, then Promise.race will become rejcet.
+ */
 function race() {
   const arg1 = arguments[0]
 

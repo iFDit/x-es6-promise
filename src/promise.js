@@ -59,15 +59,15 @@ class Promise {
 
   resolveSync(value) {
     if (this.getState() !== 'pendding') { return }
-
-    const then =  value ? value.then : null
+    const then =  value && value.then
 
     if (isFunction(then)) {
       return then.call(value, this.resolve, this.reject)
     }
 
-    this.fulfilledcallList.forEach((cb, index) => {
-      const rejectedHandle = this.rejectedcallList[index]
+    while (this.fulfilledcallList.length > 0) {
+      const cb = this.fulfilledcallList.shift()
+      const rejectedHandle = this.rejectedcallList.shift()
       const toReject = rejectedHandle ? rejectedHandle.reject : null
       const toResolve = cb.resolve
 
@@ -79,22 +79,35 @@ class Promise {
       } catch (e) {
         toReject(e)
       }
-    })
+    }
+    // this.fulfilledcallList.forEach((cb, index) => {
+    //   const rejectedHandle = this.rejectedcallList[index]
+    //   const toReject = rejectedHandle ? rejectedHandle.reject : null
+    //   const toResolve = cb.resolve
 
+    //   try {
+    //     const onfulfilled = cb.onfulfilled
+    //     // if have not onfulfilled callback, then pass value to next promise.
+    //     if (!isFunction(onfulfilled)) { toResolve(value) }
+    //     this.handleValue(onfulfilled(value), toResolve, toReject)
+    //   } catch (e) {
+    //     toReject(e)
+    //   }
+    // })
     this.setState('resolved', value)
   }
 
   rejectSync(value) {
     if (this.getState() !== 'pendding') { return }
-    
-    const then = value.then
+    const then = value && value.then
     
     if (isFunction(then)) {
       return then.call(value, this.resolve, this.reject)
     }
 
-    this.rejectedcallList.forEach((cb, index) => {
-      const resolveHandle = this.fulfilledcallList[index]
+    while (this.rejectedcallList.length > 0) {
+      const cb = this.rejectedcallList.shift()
+      const resolveHandle = this.fulfilledcallList.shift()
       const toResolve = resolveHandle ? resolveHandle.resolve : null
       const toReject = cb.reject
 
@@ -106,8 +119,21 @@ class Promise {
       } catch (e) {
         toReject(e)
       }
-    })
+    }
+    // this.rejectedcallList.forEach((cb, index) => {
+    //   const resolveHandle = this.fulfilledcallList[index]
+    //   const toResolve = resolveHandle ? resolveHandle.resolve : null
+    //   const toReject = cb.reject
 
+    //   try {
+    //     const onrejected = cb.onrejected
+    //     // if have not onrejected callback, then pass throght to next promise.
+    //     if (!isFunction(onrejected)) { throw value }
+    //     this.handleValue(onrejected(value), toResolve, toReject)
+    //   } catch (e) {
+    //     toReject(e)
+    //   }
+    // })
     this.setState('rejected', value)
   }
 
