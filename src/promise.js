@@ -1,15 +1,21 @@
 const util = require('./util')
 
+const hasThen = util.hasThen
+const getThen = util.getThen
+const createId = util.createId
 const isObject = util.isObject
 const isFunction = util.isFunction
 
 // Promise/A+
 class Promise {
 
-  constructor(fn) {
+  constructor(fn, id) {
     // promise inner property.
+    // use to indicate same promise(fixed 2.3.2 bug)
+    this.promiseId = id || createId(Math.random() * 1000)
     this.value = void 0
     this.state = 'pendding'
+    this.asyncThenPending = false
     this.fulfilledcallList = []
     this.rejectedcallList = []
     // method bind
@@ -17,11 +23,14 @@ class Promise {
     this.reject = this.reject.bind(this)
     this.then = this.then.bind(this)
     this.catch = this.catch.bind(this)
+    this.handleValue = this.handleValue.bind(this)
+    this.resolveSync = this.resolveSync.bind(this)
+    this.rejectSync = this.rejectSync.bind(this)
 
     // init promise call
     this.init(fn)
     // return other promise instance 
-    return { then: this.then, catch: this.catch }
+    return { then: this.then, catch: this.catch, promiseId: this.promiseId }
   }
 
   init(fn) {
@@ -58,11 +67,26 @@ class Promise {
   }
 
   resolveSync(value) {
-    if (this.getState() !== 'pendding') { return }
-    const then =  value && value.then
-
-    if (isFunction(then)) {
-      return then.call(value, this.resolve, this.reject)
+    if (this.getState() !== 'pendding' || this.asyncThenPending) { return }
+    // safe get then property.
+    try {
+      const then = hasThen(value) && getThen(value)
+      if (isFunction(then)) {
+        this.asyncThenPending = true
+        // Promise/A+ 2.3.3.3.1 `thenable that tries to fulfill twice for an asynchronously-fulfilled custom thenable`
+        const resolveFn = (value) => {
+          this.asyncThenPending = false
+          this.resolveSync(value)
+        }
+        const rejectFn = (reason) => {
+          this.asyncThenPending = false
+          this.rejectSync(reason)
+        }
+        return then.call(value, resolveFn, rejectFn)
+      }
+    } catch (err) {
+      // handle Promise/A+ 2.3.3.1
+      this.rejectSync(err)
     }
 
     while (this.fulfilledcallList.length > 0) {
@@ -80,30 +104,12 @@ class Promise {
         toReject(e)
       }
     }
-    // this.fulfilledcallList.forEach((cb, index) => {
-    //   const rejectedHandle = this.rejectedcallList[index]
-    //   const toReject = rejectedHandle ? rejectedHandle.reject : null
-    //   const toResolve = cb.resolve
 
-    //   try {
-    //     const onfulfilled = cb.onfulfilled
-    //     // if have not onfulfilled callback, then pass value to next promise.
-    //     if (!isFunction(onfulfilled)) { toResolve(value) }
-    //     this.handleValue(onfulfilled(value), toResolve, toReject)
-    //   } catch (e) {
-    //     toReject(e)
-    //   }
-    // })
     this.setState('resolved', value)
   }
 
-  rejectSync(value) {
-    if (this.getState() !== 'pendding') { return }
-    const then = value && value.then
-    
-    if (isFunction(then)) {
-      return then.call(value, this.resolve, this.reject)
-    }
+  rejectSync(value, status) {
+    if (this.getState() !== 'pendding' || this.asyncThenPending) { return }
 
     while (this.rejectedcallList.length > 0) {
       const cb = this.rejectedcallList.shift()
@@ -120,26 +126,19 @@ class Promise {
         toReject(e)
       }
     }
-    // this.rejectedcallList.forEach((cb, index) => {
-    //   const resolveHandle = this.fulfilledcallList[index]
-    //   const toResolve = resolveHandle ? resolveHandle.resolve : null
-    //   const toReject = cb.reject
 
-    //   try {
-    //     const onrejected = cb.onrejected
-    //     // if have not onrejected callback, then pass throght to next promise.
-    //     if (!isFunction(onrejected)) { throw value }
-    //     this.handleValue(onrejected(value), toResolve, toReject)
-    //   } catch (e) {
-    //     toReject(e)
-    //   }
-    // })
     this.setState('rejected', value)
   }
 
   handleValue(object, resolve, reject) {
     if (isObject(object) || isFunction(object)) {
-      const thenable = object.then
+      // handle Promise/A+ 2.3.1
+      if(object.promiseId === this.promiseId) {
+        throw new TypeError('same object error')
+      }
+
+      // fixed Promise/A+ 
+      const thenable = hasThen(object) && getThen(object)
       isFunction(thenable)
         ? thenable.call(object, resolve, reject)
         : resolve(object)

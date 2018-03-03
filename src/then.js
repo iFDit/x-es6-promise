@@ -1,9 +1,10 @@
 const Promise = require('./promise')
 const util = require('./util')
 
-const isFunction = util.isfunction
+const isFunction = util.isFunction
 const isObject = util.isObject
-
+const hasThen = util.hasThen
+const getThen = util.getThen
 
 /**
  * Provide Promise/A+ then implement.
@@ -27,7 +28,7 @@ function then(onfulfilled, onrejected) {
         {onfulfilled, resolve},
         {onrejected, reject},
       )
-    )
+    , this.promiseId)
   }
 
   try {
@@ -48,7 +49,12 @@ function then(onfulfilled, onrejected) {
     }
 
     if (isObject(returnValue) || isFunction(returnValue)) {
-      const thenable = returnValue.then
+
+      if(returnValue.promiseId === this.promiseId) {
+        throw new TypeError('same object error')
+      }
+
+      const thenable = hasThen(returnValue) && getThen(returnValue)
       return isFunction(thenable)
         ? new Promise((resolve, reject) =>
           thenable.call(returnValue, resolve, reject))
