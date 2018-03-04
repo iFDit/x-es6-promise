@@ -1,5 +1,6 @@
 const util = require('./util')
 
+const once = util.once
 const hasThen = util.hasThen
 const getThen = util.getThen
 const createId = util.createId
@@ -15,7 +16,6 @@ class Promise {
     this.promiseId = id || createId(Math.random() * 1000)
     this.value = void 0
     this.state = 'pendding'
-    this.asyncThenPending = false
     this.fulfilledcallList = []
     this.rejectedcallList = []
     // method bind
@@ -67,26 +67,21 @@ class Promise {
   }
 
   resolveSync(value) {
-    if (this.getState() !== 'pendding' || this.asyncThenPending) { return }
-    // safe get then property.
+    if (this.getState() !== 'pendding') { return }
+    // Promise/A+ 2.3.3.3.1 `thenable that tries to fulfill twice for an asynchronously-fulfilled custom thenable`
+    const [onceResolve, onceReject] = once([this.resolveSync, this.rejectSync])
     try {
       const then = hasThen(value) && getThen(value)
       if (isFunction(then)) {
-        this.asyncThenPending = true
-        // Promise/A+ 2.3.3.3.1 `thenable that tries to fulfill twice for an asynchronously-fulfilled custom thenable`
-        const resolveFn = (value) => {
-          this.asyncThenPending = false
-          this.resolveSync(value)
-        }
-        const rejectFn = (reason) => {
-          this.asyncThenPending = false
-          this.rejectSync(reason)
-        }
-        return then.call(value, resolveFn, rejectFn)
+        return then.call(
+          value,
+          onceResolve,
+          onceReject,
+        )
       }
     } catch (err) {
-      // handle Promise/A+ 2.3.3.1
-      this.rejectSync(err)
+      // Promise/A+ 2.3.3.3.1
+      return onceReject(err)
     }
 
     while (this.fulfilledcallList.length > 0) {
@@ -94,36 +89,38 @@ class Promise {
       const rejectedHandle = this.rejectedcallList.shift()
       const toReject = rejectedHandle ? rejectedHandle.reject : null
       const toResolve = cb.resolve
+      const [onceResolve, onceReject] = once([toResolve, toReject])
 
       try {
         const onfulfilled = cb.onfulfilled
         // if have not onfulfilled callback, then pass value to next promise.
         if (!isFunction(onfulfilled)) { toResolve(value) }
-        this.handleValue(onfulfilled(value), toResolve, toReject)
+        this.handleValue(onfulfilled(value), onceResolve, onceReject)
       } catch (e) {
-        toReject(e)
+        onceReject(e)
       }
     }
 
     this.setState('resolved', value)
   }
 
-  rejectSync(value, status) {
-    if (this.getState() !== 'pendding' || this.asyncThenPending) { return }
+  rejectSync(value) {
+    if (this.getState() !== 'pendding') { return }
 
     while (this.rejectedcallList.length > 0) {
       const cb = this.rejectedcallList.shift()
       const resolveHandle = this.fulfilledcallList.shift()
       const toResolve = resolveHandle ? resolveHandle.resolve : null
       const toReject = cb.reject
+      const [onceResolve, onceReject] = once([toResolve, toReject])
 
       try {
         const onrejected = cb.onrejected
         // if have not onrejected callback, then pass throght to next promise.
         if (!isFunction(onrejected)) { throw value }
-        this.handleValue(onrejected(value), toResolve, toReject)
+        this.handleValue(onrejected(value), onceResolve, onceReject)
       } catch (e) {
-        toReject(e)
+        onceReject(e)
       }
     }
 
@@ -187,7 +184,6 @@ class Promise {
   getValue() {
     return this.value
   }
-
 }
 
 module.exports = Promise
