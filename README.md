@@ -5,5 +5,5 @@
 
 # x-es6-promise
 
-基于Promise/A+规范实现，提供了基于现代浏览器Promise的API。
+基于Promise/A+规范实现，提供了ES6 Promise API。
 
