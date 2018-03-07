@@ -98,10 +98,10 @@ describe('Util function', function () {
       const callback1 = sinon.spy()
       const callback2 = sinon.spy()
 
-      const [proxy1, proxy2] = once(callback1, callback2)
+      const [proxy1, proxy2] = once([callback1, callback2])
       proxy1()
       proxy2()
-      
+
       assert.equal(callback1.called, true)
       assert.equal(callback2.called, false)
 
