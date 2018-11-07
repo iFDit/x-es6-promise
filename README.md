@@ -5,5 +5,5 @@
 
 # x-es6-promise
 
-基于Promise/A+规范实现，提供了ES6 Promise API。
+base on Promise/A+, provide ES6 Promise API.
 
